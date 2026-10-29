@@ -33,6 +33,8 @@ The default acquisition strategy is **Expected Improvement (EI)** for minimizati
 
 The runner proposes an input; it does not evaluate the hidden function. After an external evaluation, add the returned input/output pair to the corresponding runner's observation data before requesting another candidate.
 
+For intended use, model details, observed results, and limitations, see the [model card](MODEL_CARD.md).
+
 ## Current observed results
 
 The table reports the lowest output in each current observation set. These are observed values, not estimates of the unknown global minima. Because output scales differ by function, compare values only within the same function.
@@ -54,10 +56,10 @@ The chart below shows each additional output in evaluation order. Each function 
 
 ## Run a benchmark
 
-Install the project's Python dependencies (`numpy`, `scipy`, `scikit-learn`, and `matplotlib`) in your environment, then run a benchmark from the repository root:
+Install the project's Python dependencies from `requirements.txt`, then run a benchmark from the repository root:
 
 ```powershell
-python -m pip install numpy scipy scikit-learn matplotlib
+python -m pip install -r requirements.txt
 python -m runner.function_1
 ```
 
@@ -91,6 +93,7 @@ The plotting helper `plot_additional_outputs` in `utility/plotting_utils.py` acc
 
 ```text
 README.md                         Project overview and usage
+MODEL_CARD.md                     Model purpose, method, results, limitations
 initial_data/function_1..8/       Starter input and output arrays
 runner/
   benchmark_runner.py             Shared runner data loading and execution
