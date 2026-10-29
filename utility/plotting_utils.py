@@ -1,6 +1,64 @@
+"""Plotting helpers for Gaussian-process and Bayesian-optimization results."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+
+
+def plot_additional_outputs(additional_outputs_by_function, ncols=2):
+    """Plot the observed additional outputs for each benchmark function.
+
+    Pass a mapping from function IDs to their ``ADDITIONAL_OUTPUTS`` arrays.
+    Each function gets its own axis so functions with different output scales
+    remain readable.
+    """
+    if not additional_outputs_by_function:
+        raise ValueError("Provide at least one function and its additional outputs.")
+    if ncols < 1:
+        raise ValueError("ncols must be at least 1.")
+
+    function_data = []
+    for function_id, outputs in additional_outputs_by_function.items():
+        values = np.asarray(outputs, dtype=float).reshape(-1)
+        if values.size == 0:
+            raise ValueError(f"Function {function_id} has no additional outputs to plot.")
+        if not np.all(np.isfinite(values)):
+            raise ValueError(f"Function {function_id} outputs must all be finite.")
+        function_data.append((function_id, values))
+
+    nrows = int(np.ceil(len(function_data) / ncols))
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(6 * ncols, 3.5 * nrows),
+        squeeze=False,
+    )
+    flat_axes = axes.ravel()
+
+    for ax, (function_id, values) in zip(flat_axes, function_data):
+        evaluations = np.arange(1, values.size + 1)
+        best_index = np.argmin(values)
+
+        ax.plot(evaluations, values, marker="o", linewidth=1.5)
+        ax.scatter(
+            evaluations[best_index],
+            values[best_index],
+            color="red",
+            zorder=3,
+            label=f"Lowest: {values[best_index]:.4g}",
+        )
+        ax.set_title(f"Function {function_id}")
+        ax.set_xlabel("Additional evaluation")
+        ax.set_ylabel("Output")
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc="best")
+
+    for ax in flat_axes[len(function_data):]:
+        ax.set_visible(False)
+
+    fig.suptitle("Additional outputs by benchmark function")
+    fig.tight_layout()
+    return fig, axes
 
 
 def plot_gp_1d(X_train, y_train, X_test, mu, sigma, title="Gaussian Process"):
@@ -158,8 +216,8 @@ def plot_2d_bo_state(X1, X2, Z, X_samples, y_samples, title="Bayesian Optimizati
                         cmap='coolwarm', edgecolors='black', 
                         linewidths=2, zorder=10)
     
-    # Mark the best point found so far
-    best_idx = np.argmax(y_samples)
+    # Mark the lowest observed function value.
+    best_idx = np.argmin(y_samples)
     ax.scatter(X_samples[best_idx, 0], X_samples[best_idx, 1], 
               marker='*', s=500, c='gold', edgecolors='black', 
               linewidths=2, zorder=11, label='Best found')
@@ -213,7 +271,7 @@ def plot_parallel_coordinates(X_samples, y_samples, n_best=5):
     fig, ax = plt.subplots(figsize=(10, 4))
     
     # Get indices of best samples
-    best_indices = np.argsort(y_samples)[-n_best:]
+    best_indices = np.argsort(y_samples)[:n_best]
     
     # Plot all samples in gray
     for i in range(len(X_samples)):
@@ -229,7 +287,7 @@ def plot_parallel_coordinates(X_samples, y_samples, n_best=5):
     
     ax.set_xlabel('Dimension', fontsize=12)
     ax.set_ylabel('Value', fontsize=12)
-    ax.set_title(f'Parallel Coordinates - Top {n_best} Solutions', fontsize=14)
+    ax.set_title(f'Parallel Coordinates - Lowest {n_best} Values', fontsize=14)
     ax.set_xticks(range(n_dims))
     ax.set_xticklabels([f'x{i}' for i in range(n_dims)])
     ax.legend(loc='best', fontsize=9)
